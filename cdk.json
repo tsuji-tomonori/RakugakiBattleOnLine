@@ -1,0 +1,40 @@
+{
+    "app": "python cdk/app.py",
+    "requireApproval": "never",
+    "fail": true,
+    "versionReporting": false,
+    "watch": {
+        "include": [
+            "**"
+        ],
+        "exclude": [
+            "README.md",
+            "cdk*.json",
+            "requirements*.txt",
+            "source.bat",
+            "**/__init__.py",
+            "python/__pycache__",
+            "tests"
+        ]
+    },
+    "context": {
+        "project_name": "RakugakiBattleOnLine",
+        "env_fn_on_connect": {
+            "LOG_LEVEL": "INFO"
+        },
+        "env_fn_enter_room": {
+            "LOG_LEVEL": "INFO"
+        },
+        "env_fn_dic_connect": {
+            "LOG_LEVEL": "INFO"
+        },
+        "env_db_user": {
+            "pkey": "user_id",
+            "skey": "skey"
+        },
+        "env_db_room": {
+            "pkey": "room_id",
+            "skey": "user_id"
+        }
+    }
+}
