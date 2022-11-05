@@ -61,6 +61,9 @@ class RakugakiBattleOnLine(Stack):
             auto_deploy=True,
             web_socket_api=api,
         )
+        endpoint = f"https://{api.api_id}.execute-api.{api.env.region}.amazonaws.com/{prod.stage_name}"
+        enter_room.fn.add_environment("ENDPOINT_URL", endpoint)
+        dis_connect.fn.add_environment("ENDPOINT_URL", endpoint)
 
         CfnOutput(
             self, "WebSocketURI",
