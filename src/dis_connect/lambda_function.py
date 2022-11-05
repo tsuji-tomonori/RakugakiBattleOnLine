@@ -71,7 +71,7 @@ def lambda_handler(event, context):
     connection_ids = []
     try:
         items = room_table.query(
-            KeyConditions=Key(ep.ROOM_TABLE_PKEY).eq(info["room_id"])
+            KeyConditionExpression=Key(ep.ROOM_TABLE_PKEY).eq(info["room_id"])
         )
         connection_ids = [item[ep.ROOM_TABLE_SKEY] for item in items]
     except:
