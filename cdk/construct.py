@@ -29,7 +29,7 @@ class PythonLambdaWithoutLayer(Construct):
 
         loggroup_name = f"/aws/lambda/{self.fn.function_name}"
         logs.LogGroup(
-            self, loggroup_name,
+            self, f"{id}-loggroup",
             log_group_name=loggroup_name,
             retention=logs.RetentionDays.ONE_DAY,
         )
