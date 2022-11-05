@@ -55,7 +55,7 @@ class RakugakiBattleOnLine(Stack):
         api.grant_manage_connections(enter_room.fn.role)
         api.grant_manage_connections(dis_connect.fn.role)
 
-        WebSocketStage(
+        prod = WebSocketStage(
             self, "ProdApi",
             stage_name="prod",
             auto_deploy=True,
@@ -64,6 +64,6 @@ class RakugakiBattleOnLine(Stack):
 
         CfnOutput(
             self, "WebSocketURI",
-            value=api.api_endpoint,
+            value=prod.url,
             description="The WSS Protocol URI to connect to",
         )
