@@ -17,6 +17,7 @@ class EnvironParam(NamedTuple):
     ROOM_TABLE_NAME: str
     ROOM_TABLE_PKEY: str
     ROOM_TABLE_SKEY: str
+    ENDPOINT_URL: str
 
     @classmethod
     def from_env(cls) -> EnvironParam:
@@ -27,7 +28,7 @@ ep = EnvironParam.from_env()
 logger = logging.getLogger()
 logger.setLevel(ep.LOG_LEVEL)
 dynamodb = boto3.resource("dynamodb")
-apigw = boto3.client('apigatewaymanagementapi')
+apigw = boto3.client('apigatewaymanagementapi', endpoint_url=ep.ENDPOINT_URL)
 user_table = dynamodb.Table(ep.USER_TABLE_NAME)
 room_table = dynamodb.Table(ep.ROOM_TABLE_NAME)
 
