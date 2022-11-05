@@ -49,7 +49,7 @@ class RakugakiBattleOnLine(Stack):
             api_name="rakugaki_battle_online",
         )
         api.add_route(
-            route_key="enter_room_route",
+            route_key="enter_room",
             integration=WebSocketLambdaIntegration("enter_room_integration", enter_room.fn)
         )
         api.grant_manage_connections(enter_room.fn.role)
