@@ -59,6 +59,7 @@ class RakugakiBattleOnLine(Stack):
             self, "ProdApi",
             stage_name="prod",
             auto_deploy=True,
+            web_socket_api=api,
         )
 
         CfnOutput(
