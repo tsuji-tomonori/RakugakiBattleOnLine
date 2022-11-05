@@ -76,7 +76,7 @@ def lambda_handler(event, context):
                 ConnectionId=connection_id,
             )
     except:
-        logger.exception("TablePutError")
+        logger.exception("post_to_connection_error")
         return {
             "statusCode": 500,
         }
