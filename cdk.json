@@ -25,7 +25,7 @@
         "env_fn_enter_room": {
             "LOG_LEVEL": "INFO"
         },
-        "env_fn_dic_connect": {
+        "env_fn_dis_connect": {
             "LOG_LEVEL": "INFO"
         },
         "env_db_user": {
