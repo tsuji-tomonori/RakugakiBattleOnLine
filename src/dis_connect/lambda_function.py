@@ -53,7 +53,7 @@ def lambda_handler(event, context):
         user_table.delete_item(
             Key={
                 ep.USER_TABLE_PKEY: event["requestContext"]["connectionId"],
-                ep.USER_TABLE_SKEY: "info",
+                ep.USER_TABLE_SKEY: "login",
             }
         )
         room_table.delete_item(
