@@ -61,8 +61,6 @@ class RakugakiBattleOnLine(Stack):
             auto_deploy=True,
             web_socket_api=api,
         )
-        enter_room.fn.add_environment("ENDPOINT_URL", prod.url)
-        dis_connect.fn.add_environment("ENDPOINT_URL", prod.url)
 
         CfnOutput(
             self, "WebSocketURI",
