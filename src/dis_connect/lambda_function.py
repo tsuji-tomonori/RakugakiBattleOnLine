@@ -72,7 +72,7 @@ def lambda_handler(event, context):
     try:
         items = room_table.query(
             KeyConditionExpression=Key(ep.ROOM_TABLE_PKEY).eq(info["room_id"])
-        )
+        )["Items"]
         connection_ids = [item[ep.ROOM_TABLE_SKEY] for item in items]
     except:
         logger.exception("TableQueryError")
