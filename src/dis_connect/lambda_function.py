@@ -17,6 +17,7 @@ class EnvironParam(NamedTuple):
     ROOM_TABLE_NAME: str
     ROOM_TABLE_PKEY: str
     ROOM_TABLE_SKEY: str
+    ENDPOINT_URL: str
 
     @classmethod
     def from_env(cls) -> EnvironParam:
@@ -27,7 +28,7 @@ ep = EnvironParam.from_env()
 logger = logging.getLogger()
 logger.setLevel(ep.LOG_LEVEL)
 dynamodb = boto3.resource("dynamodb")
-apigw = boto3.client('apigatewaymanagementapi')
+apigw = boto3.client('apigatewaymanagementapi', endpoint_url=ep.ENDPOINT_URL)
 user_table = dynamodb.Table(ep.USER_TABLE_NAME)
 room_table = dynamodb.Table(ep.ROOM_TABLE_NAME)
 
@@ -52,7 +53,7 @@ def lambda_handler(event, context):
         user_table.delete_item(
             Key={
                 ep.USER_TABLE_PKEY: event["requestContext"]["connectionId"],
-                ep.USER_TABLE_SKEY: "info",
+                ep.USER_TABLE_SKEY: "login",
             }
         )
         room_table.delete_item(
@@ -74,7 +75,7 @@ def lambda_handler(event, context):
         )
         connection_ids = [item[ep.ROOM_TABLE_SKEY] for item in items]
     except:
-        logger.exception("TablePutError")
+        logger.exception("TableQueryError")
         return {
             "statusCode": 500,
         }
@@ -85,7 +86,7 @@ def lambda_handler(event, context):
                 ConnectionId=connection_id,
             )
     except:
-        logger.exception("TablePutError")
+        logger.exception("post_to_connection_error")
         return {
             "statusCode": 500,
         }
