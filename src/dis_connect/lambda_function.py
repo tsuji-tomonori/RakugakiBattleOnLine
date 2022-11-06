@@ -38,7 +38,7 @@ class UDbInfoSchema(NamedTuple):
 
     @classmethod
     def from_db(cls, response: dict[str, Any]) -> UDbInfoSchema:
-        return UDbInfoSchema(**{response["Item"][k] for k in UDbInfoSchema._fields})
+        return UDbInfoSchema(**{k: response["Item"][k] for k in UDbInfoSchema._fields})
 
 
 def lambda_handler(event, context):
