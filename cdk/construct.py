@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import aws_cdk as cdk
 from aws_cdk import (
     aws_lambda as lambda_,
     aws_logs as logs,
     aws_dynamodb as dynamodb,
+    aws_s3 as s3,
     Duration,
 )
 from constructs import Construct
@@ -66,3 +68,32 @@ class CreateDbAndSetEnvToFn(Construct):
                 f"{id.upper()}_TABLE_NAME", self.db.table_name)
             fn.add_environment(f"{id.upper()}_TABLE_PKEY", pkey)
             fn.add_environment(f"{id.upper()}_TABLE_SKEY", skey)
+
+
+class CreateBucketAndSetEnvToFn(Construct):
+
+    def __init__(self, scope: Construct, id: str, fns: list[lambda_.Function] = []) -> None:
+        super().__init__(scope, id)
+
+        bucket_name = f"s3s-{id.replace('_', '-').lower()}-cdk"
+        key = self.node.try_get_context(f"env_s3_{id.lower()}")["key"]
+
+        self.bucket = s3.Bucket(
+            self, bucket_name,
+            bucket_name=bucket_name,
+            removal_policy=cdk.RemovalPolicy.DESTROY,
+            auto_delete_objects=True,
+            versioned=False,
+            lifecycle_rules=[
+                s3.LifecycleRule(
+                    id="result_delete",
+                    prefix=key,
+                    expiration=Duration.days(1),
+                ),
+            ]
+        )
+
+        for fn in fns:
+            fn.add_environment(
+                f"{id.upper()}_BUCKET_NAME", self.bucket.bucket_name)
+            fn.add_environment(f"{id.upper()}_BUCKET_KEY", key)
