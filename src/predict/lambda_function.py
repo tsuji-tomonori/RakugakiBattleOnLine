@@ -59,7 +59,7 @@ def upload_img(connection_id: str, img_b64: str) -> str:
     key = f"{ep.RESULT_BUCKET_KEY}/{connection_id}/{uuid.uuid4()}.png"
     try:
         s3.put_object(
-            Body=base64.b64decode(img_b64),
+            Body=base64.b64decode(img_b64.split(",")[1]),
             Bucket=ep.RESULT_BUCKET_NAME,
             Key=key,
         )
