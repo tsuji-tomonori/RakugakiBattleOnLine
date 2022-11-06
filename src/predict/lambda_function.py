@@ -63,6 +63,7 @@ def upload_img(connection_id: str, img_b64: str) -> str:
             Bucket=ep.BUCKET_NAME,
             Key=key,
         )
+        logger.info(f"upload img at {key}")
     except Exception as e:
         logger.exception("put_object")
         raise DoNotRetryException from e
