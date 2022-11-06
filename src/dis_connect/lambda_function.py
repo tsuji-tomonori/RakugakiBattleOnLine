@@ -35,6 +35,7 @@ room_table = dynamodb.Table(ep.ROOM_TABLE_NAME)
 
 class UDbInfoSchema(NamedTuple):
     room_id: str
+    user_name: str
 
     @classmethod
     def from_db(cls, response: dict[str, Any]) -> UDbInfoSchema:
@@ -92,7 +93,7 @@ def lambda_handler(event, context):
     try:
         for room_connection_id in room_connection_ids:
             apigw.post_to_connection(
-                Data=f"{info['user_name']}さんが退出しました!".encode(),
+                Data=f"{info.user_name}さんが退出しました!".encode(),
                 ConnectionId=room_connection_id,
             )
     except:

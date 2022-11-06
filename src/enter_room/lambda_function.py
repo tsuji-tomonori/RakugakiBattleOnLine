@@ -69,22 +69,22 @@ def lambda_handler(event, context):
             "statusCode": 500,
         }
     # roomに入出したことを参加者に伝える
-    connection_ids = []
+    room_connection_ids = []
     try:
         items = room_table.query(
             KeyConditionExpression=Key(ep.ROOM_TABLE_PKEY).eq(body.room_id)
         )["Items"]
-        connection_ids = [item[ep.ROOM_TABLE_SKEY] for item in items]
+        room_connection_ids = [item[ep.ROOM_TABLE_SKEY] for item in items]
     except:
         logger.exception("TableQueryError")
         return {
             "statusCode": 500,
         }
     try:
-        for connection_id in connection_ids:
+        for room_connection_id in room_connection_ids:
             apigw.post_to_connection(
                 Data=f"{body.user_name}さんが入出しました!".encode(),
-                ConnectionId=connection_id,
+                ConnectionId=room_connection_id,
             )
     except:
         logger.exception("post_to_connection_error")
