@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import json
 import logging
-from typing import NamedTuple
+from typing import Any, NamedTuple
 
 import boto3
 from boto3.dynamodb.conditions import Key
@@ -33,22 +33,32 @@ user_table = dynamodb.Table(ep.USER_TABLE_NAME)
 room_table = dynamodb.Table(ep.ROOM_TABLE_NAME)
 
 
+class BodySchema(NamedTuple):
+    room_id: str
+    user_name: str
+
+    @classmethod
+    def from_event(cls, event: dict[str, Any]) -> BodySchema:
+        body = json.loads(event["body"])
+        return BodySchema(**{k: body[k] for k in BodySchema._fields})
+
+
 def lambda_handler(event, context):
     logger.info(json.dumps(event, indent=2))
-    body = json.loads(event["body"])
+    body = BodySchema.from_event(event)
     # 自分の情報をDBに登録する
     try:
         user_table.put_item(
             Item={
                 ep.USER_TABLE_PKEY: event["requestContext"]["connectionId"],
                 ep.USER_TABLE_SKEY: "info",
-                "room_id": body["room_id"],
-                "user_name": body["user_name"],
+                "room_id": body.room_id,
+                "user_name": body.user_name,
             }
         )
         room_table.put_item(
             Item={
-                ep.ROOM_TABLE_PKEY: body["room_id"],
+                ep.ROOM_TABLE_PKEY: body.room_id,
                 ep.ROOM_TABLE_SKEY: event["requestContext"]["connectionId"],
             }
         )
@@ -61,7 +71,7 @@ def lambda_handler(event, context):
     connection_ids = []
     try:
         items = room_table.query(
-            KeyConditionExpression=Key(ep.ROOM_TABLE_PKEY).eq(body["room_id"])
+            KeyConditionExpression=Key(ep.ROOM_TABLE_PKEY).eq(body.room_id)
         )["Items"]
         connection_ids = [item[ep.ROOM_TABLE_SKEY] for item in items]
     except:
@@ -72,7 +82,7 @@ def lambda_handler(event, context):
     try:
         for connection_id in connection_ids:
             apigw.post_to_connection(
-                Data=f"{body['user_name']}さんが入出しました!".encode(),
+                Data=f"{body.user_name}さんが入出しました!".encode(),
                 ConnectionId=connection_id,
             )
     except:
