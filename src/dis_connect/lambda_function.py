@@ -42,12 +42,23 @@ class UDbInfoSchema(NamedTuple):
         return UDbInfoSchema(**{k: response["Item"][k] for k in UDbInfoSchema._fields})
 
 
+def all_delete_user_table(connection_id: str) -> None:
+    res = user_table.query(KeyConditionExpression=Key(ep.USER_TABLE_PKEY).eq(connection_id))
+    skeys = [item[ep.USER_TABLE_SKEY] for item in res["Items"]]
+    for skey in skeys:
+        user_table.delete_item(
+            Key={
+                ep.USER_TABLE_PKEY: connection_id,
+                ep.USER_TABLE_SKEY: skey,
+            }
+        )
+
+
 def lambda_handler(event, context):
     logger.info(json.dumps(event, indent=2))
-    # 自分の情報を削除する
     connection_id = event["requestContext"]["connectionId"]
+    # 今後の処理のためinfoを取得しておく
     try:
-        # 今後の処理のためinfoを取得しておく
         res_info = user_table.get_item(
             Key={
                 ep.USER_TABLE_PKEY: connection_id,
@@ -55,18 +66,14 @@ def lambda_handler(event, context):
             }
         )
         info = UDbInfoSchema.from_db(res_info)
-        user_table.delete_item(
-            Key={
-                ep.USER_TABLE_PKEY: connection_id,
-                ep.USER_TABLE_SKEY: "info",
-            }
-        )
-        user_table.delete_item(
-            Key={
-                ep.USER_TABLE_PKEY: connection_id,
-                ep.USER_TABLE_SKEY: "login",
-            }
-        )
+    except:
+        logger.exception("user_table.get_item_error")
+        return {
+            "statusCode": 500,
+        }
+    # 自分の情報を削除する
+    try:
+        all_delete_user_table(connection_id)
         room_table.delete_item(
             Key={
                 ep.ROOM_TABLE_PKEY: info.room_id,
@@ -74,12 +81,11 @@ def lambda_handler(event, context):
             }
         )
     except:
-        logger.exception("TablePutError")
+        logger.exception("delete_item_error")
         return {
             "statusCode": 500,
         }
     # roomに入出したことを参加者に伝える
-    room_connection_ids = []
     try:
         items = room_table.query(
             KeyConditionExpression=Key(ep.ROOM_TABLE_PKEY).eq(info.room_id)
