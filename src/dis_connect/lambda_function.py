@@ -70,6 +70,7 @@ def get_info(connection_id: str) -> UDbInfoSchema | None:
                 ep.USER_TABLE_SKEY: "info",
             }
         )
+        logger.info(json.dumps(res_info, indent=2))
     except Exception as e:
         logger.exception("get_item_error")
         raise DoNotRetryException from e
@@ -116,8 +117,8 @@ def post_room(info: UDbInfoSchema) -> None:
 
 
 def service(connection_id: str) -> None:
-    all_delete_user_table(connection_id)
     info = get_info(connection_id)
+    all_delete_user_table(connection_id)
     if info is None:
         return
     delete_room_table(info.room_id, connection_id)
