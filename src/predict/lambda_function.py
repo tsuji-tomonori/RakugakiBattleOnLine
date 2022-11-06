@@ -56,14 +56,14 @@ class DoNotRetryException(Exception):
 
 
 def upload_img(connection_id: str, img_b64: str) -> str:
-    key = f"{ep.BUCKET_KEY}/{connection_id}/{uuid.uuid4()}.png"
+    key = f"{ep.RESULT_BUCKET_KEY}/{connection_id}/{uuid.uuid4()}.png"
     try:
         s3.put_object(
             Body=base64.b64decode(img_b64),
-            Bucket=ep.BUCKET_NAME,
+            Bucket=ep.RESULT_BUCKET_NAME,
             Key=key,
         )
-        logger.info(f"upload img at {key}")
+        return key
     except Exception as e:
         logger.exception("put_object")
         raise DoNotRetryException from e
@@ -111,6 +111,7 @@ def lambda_handler(event, context):
             "statusCode": 200,
         }
     except:
+        logger.exception("ERROR")
         return {
             "statusCode": 500,
         }
