@@ -110,7 +110,7 @@ def post_room(info: UDbInfoSchema) -> None:
             )
         except boto3.client.exceptions.GoneException:
             # 何らかの事情でDBに残っていても接続が切れている場合があるのでSkip
-            continue
+            logger.exception("warn")
         except Exception as e:
             logger.exception("delete_item_error")
             raise DoNotRetryException from e
