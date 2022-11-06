@@ -29,7 +29,7 @@ class RakugakiBattleOnLine(Stack):
         for construst in [on_connect, enter_room, dis_connect, predict]:
             Tags.of(construst).add("Construct", construst.node.id)
 
-        user = CreateDbAndSetEnvToFn(self, "user", [on_connect.fn, enter_room.fn, dis_connect.fn])
+        user = CreateDbAndSetEnvToFn(self, "user", [on_connect.fn, enter_room.fn, dis_connect.fn, predict.fn])
         user.db.grant_write_data(on_connect.fn.role)
         user.db.grant_write_data(enter_room.fn.role)
         user.db.grant_full_access(dis_connect.fn.role)
@@ -74,6 +74,7 @@ class RakugakiBattleOnLine(Stack):
         endpoint = f"https://{api.api_id}.execute-api.{api.env.region}.amazonaws.com/{prod.stage_name}"
         enter_room.fn.add_environment("ENDPOINT_URL", endpoint)
         dis_connect.fn.add_environment("ENDPOINT_URL", endpoint)
+        predict.fn.add_environment("ENDPOINT_URL", endpoint)
 
         CfnOutput(
             self, "WebSocketURI",
