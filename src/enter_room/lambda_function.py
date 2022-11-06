@@ -28,7 +28,7 @@ ep = EnvironParam.from_env()
 logger = logging.getLogger()
 logger.setLevel(ep.LOG_LEVEL)
 dynamodb = boto3.resource("dynamodb")
-apigw = boto3.client('apigatewaymanagementapi', endpoint_url=ep.ENDPOINT_URL)
+apigw = boto3.client("apigatewaymanagementapi", endpoint_url=ep.ENDPOINT_URL)
 user_table = dynamodb.Table(ep.USER_TABLE_NAME)
 room_table = dynamodb.Table(ep.ROOM_TABLE_NAME)
 
@@ -46,11 +46,12 @@ class BodySchema(NamedTuple):
 def lambda_handler(event, context):
     logger.info(json.dumps(event, indent=2))
     body = BodySchema.from_event(event)
+    connection_id = event["requestContext"]["connectionId"]
     # 自分の情報をDBに登録する
     try:
         user_table.put_item(
             Item={
-                ep.USER_TABLE_PKEY: event["requestContext"]["connectionId"],
+                ep.USER_TABLE_PKEY: connection_id,
                 ep.USER_TABLE_SKEY: "info",
                 "room_id": body.room_id,
                 "user_name": body.user_name,
@@ -59,7 +60,7 @@ def lambda_handler(event, context):
         room_table.put_item(
             Item={
                 ep.ROOM_TABLE_PKEY: body.room_id,
-                ep.ROOM_TABLE_SKEY: event["requestContext"]["connectionId"],
+                ep.ROOM_TABLE_SKEY: connection_id,
             }
         )
     except:
