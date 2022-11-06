@@ -28,6 +28,9 @@
         "env_fn_dis_connect": {
             "LOG_LEVEL": "INFO"
         },
+        "env_fn_predict": {
+            "LOG_LEVEL": "INFO"
+        },
         "env_db_user": {
             "pkey": "user_id",
             "skey": "skey"
