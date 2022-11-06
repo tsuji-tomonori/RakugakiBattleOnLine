@@ -35,6 +35,9 @@
         "env_db_room": {
             "pkey": "room_id",
             "skey": "user_id"
+        },
+        "env_s3_result": {
+            "key": "result"
         }
     }
 }
