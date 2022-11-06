@@ -57,6 +57,10 @@ class RakugakiBattleOnLine(Stack):
             route_key="enter_room",
             integration=WebSocketLambdaIntegration("enter_room_integration", enter_room.fn)
         )
+        api.add_route(
+            route_key="predict",
+            integration=WebSocketLambdaIntegration("predict_integration", predict.fn),
+        )
         api.grant_manage_connections(enter_room.fn.role)
         api.grant_manage_connections(dis_connect.fn.role)
         api.grant_manage_connections(predict.fn.role)
