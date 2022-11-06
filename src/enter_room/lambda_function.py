@@ -43,11 +43,11 @@ class BodySchema(NamedTuple):
         return BodySchema(**{k: body[k] for k in BodySchema._fields})
 
 
-def lambda_handler(event, context):
-    logger.info(json.dumps(event, indent=2))
-    body = BodySchema.from_event(event)
-    connection_id = event["requestContext"]["connectionId"]
-    # 自分の情報をDBに登録する
+class DoNotRetryException(Exception):
+    ...
+
+
+def put_item(connection_id: str, body: BodySchema) -> None:
     try:
         user_table.put_item(
             Item={
@@ -63,34 +63,47 @@ def lambda_handler(event, context):
                 ep.ROOM_TABLE_SKEY: connection_id,
             }
         )
-    except:
-        logger.exception("TablePutError")
-        return {
-            "statusCode": 500,
-        }
-    # roomに入出したことを参加者に伝える
-    room_connection_ids = []
+    except Exception as e:
+        logger.exception("put_item")
+        raise DoNotRetryException from e
+
+
+def post_room(body: BodySchema) -> None:
     try:
         items = room_table.query(
             KeyConditionExpression=Key(ep.ROOM_TABLE_PKEY).eq(body.room_id)
         )["Items"]
-        room_connection_ids = [item[ep.ROOM_TABLE_SKEY] for item in items]
-    except:
-        logger.exception("TableQueryError")
-        return {
-            "statusCode": 500,
-        }
-    try:
-        for room_connection_id in room_connection_ids:
+        connection_ids = [item[ep.ROOM_TABLE_SKEY] for item in items]
+    except Exception as e:
+        logger.exception("query")
+        raise DoNotRetryException from e
+    for connection_id in connection_ids:
+        try:
             apigw.post_to_connection(
                 Data=f"{body.user_name}さんが入出しました!".encode(),
-                ConnectionId=room_connection_id,
+                ConnectionId=connection_id,
             )
+        except boto3.client.exceptions.GoneException:
+            # 何らかの事情でDBに残っていても接続が切れている場合があるのでSkip
+            continue
+        except Exception as e:
+            logger.exception("delete_item_error")
+            raise DoNotRetryException from e
+
+
+def service(connection_id: str, body: BodySchema) -> None:
+    put_item(connection_id, body)
+    post_room(body)
+
+
+def lambda_handler(event, context):
+    logger.info(json.dumps(event, indent=2))
+    try:
+        service(event["requestContext"]["connectionId"], BodySchema.from_event(event))
+        return {
+            "statusCode": 200,
+        }
     except:
-        logger.exception("post_to_connection_error")
         return {
             "statusCode": 500,
         }
-    return {
-        "statusCode": 200,
-    }
