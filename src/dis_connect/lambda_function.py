@@ -126,9 +126,8 @@ def service(connection_id: str) -> None:
 
 def lambda_handler(event, context):
     logger.info(json.dumps(event, indent=2))
-    connection_id = event["requestContext"]["connectionId"]
     try:
-        service(connection_id)
+        service(event["requestContext"]["connectionId"])
         return {
             "statusCode": 200,
         }
