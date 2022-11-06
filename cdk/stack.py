@@ -13,7 +13,7 @@ from aws_cdk.aws_apigatewayv2_alpha import(
 )
 from constructs import Construct
 
-from cdk.construct import PythonLambdaWithoutLayer, CreateDbAndSetEnvToFn
+from cdk.construct import PythonLambdaWithoutLayer, CreateDbAndSetEnvToFn, CreateBucketAndSetEnvToFn
 
 
 class RakugakiBattleOnLine(Stack):
@@ -24,18 +24,23 @@ class RakugakiBattleOnLine(Stack):
         on_connect = PythonLambdaWithoutLayer(self, "on_connect")
         enter_room = PythonLambdaWithoutLayer(self, "enter_room")
         dis_connect = PythonLambdaWithoutLayer(self, "dis_connect")
+        predict = PythonLambdaWithoutLayer(self, "predict")
 
-        for construst in [on_connect, enter_room, dis_connect]:
+        for construst in [on_connect, enter_room, dis_connect, predict]:
             Tags.of(construst).add("Construct", construst.node.id)
 
         user = CreateDbAndSetEnvToFn(self, "user", [on_connect.fn, enter_room.fn, dis_connect.fn])
         user.db.grant_write_data(on_connect.fn.role)
         user.db.grant_write_data(enter_room.fn.role)
         user.db.grant_full_access(dis_connect.fn.role)
+        user.db.grant_write_data(predict.fn.role)
 
         room = CreateDbAndSetEnvToFn(self, "room", [enter_room.fn, dis_connect.fn])
         room.db.grant_read_write_data(enter_room.fn.role)
         room.db.grant_full_access(dis_connect.fn.role)
+
+        result = CreateBucketAndSetEnvToFn(self, "result", [predict.fn])
+        result.bucket.grant_put(predict.fn.role)
 
         api = WebSocketApi(
             self, "RakugakiBattleOnLineApi",
@@ -54,6 +59,7 @@ class RakugakiBattleOnLine(Stack):
         )
         api.grant_manage_connections(enter_room.fn.role)
         api.grant_manage_connections(dis_connect.fn.role)
+        api.grant_manage_connections(predict.fn.role)
 
         prod = WebSocketStage(
             self, "ProdApi",
