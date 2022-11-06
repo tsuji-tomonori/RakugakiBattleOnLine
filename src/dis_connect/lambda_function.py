@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import json
 import logging
-from typing import NamedTuple
+from typing import Any, NamedTuple
 
 import boto3
 from boto3.dynamodb.conditions import Key
@@ -33,33 +33,43 @@ user_table = dynamodb.Table(ep.USER_TABLE_NAME)
 room_table = dynamodb.Table(ep.ROOM_TABLE_NAME)
 
 
+class UDbInfoSchema(NamedTuple):
+    room_id: str
+
+    @classmethod
+    def from_db(cls, response: dict[str, Any]) -> UDbInfoSchema:
+        return UDbInfoSchema(**{response["Item"][k] for k in UDbInfoSchema._fields})
+
+
 def lambda_handler(event, context):
     logger.info(json.dumps(event, indent=2))
     # 自分の情報を削除する
+    connection_id = event["requestContext"]["connectionId"]
     try:
         # 今後の処理のためinfoを取得しておく
-        info = user_table.get_item(
+        res_info = user_table.get_item(
             Key={
-                ep.USER_TABLE_PKEY: event["requestContext"]["connectionId"],
+                ep.USER_TABLE_PKEY: connection_id,
                 ep.USER_TABLE_SKEY: "info",
             }
-        )["Item"]
+        )
+        info = UDbInfoSchema.from_db(res_info)
         user_table.delete_item(
             Key={
-                ep.USER_TABLE_PKEY: event["requestContext"]["connectionId"],
+                ep.USER_TABLE_PKEY: connection_id,
                 ep.USER_TABLE_SKEY: "info",
             }
         )
         user_table.delete_item(
             Key={
-                ep.USER_TABLE_PKEY: event["requestContext"]["connectionId"],
+                ep.USER_TABLE_PKEY: connection_id,
                 ep.USER_TABLE_SKEY: "login",
             }
         )
         room_table.delete_item(
             Key={
-                ep.ROOM_TABLE_PKEY: info["room_id"],
-                ep.ROOM_TABLE_SKEY: event["requestContext"]["connectionId"],
+                ep.ROOM_TABLE_PKEY: info.room_id,
+                ep.ROOM_TABLE_SKEY: connection_id,
             }
         )
     except:
@@ -68,22 +78,22 @@ def lambda_handler(event, context):
             "statusCode": 500,
         }
     # roomに入出したことを参加者に伝える
-    connection_ids = []
+    room_connection_ids = []
     try:
         items = room_table.query(
-            KeyConditionExpression=Key(ep.ROOM_TABLE_PKEY).eq(info["room_id"])
+            KeyConditionExpression=Key(ep.ROOM_TABLE_PKEY).eq(info.room_id)
         )["Items"]
-        connection_ids = [item[ep.ROOM_TABLE_SKEY] for item in items]
+        room_connection_ids = [item[ep.ROOM_TABLE_SKEY] for item in items]
     except:
         logger.exception("TableQueryError")
         return {
             "statusCode": 500,
         }
     try:
-        for connection_id in connection_ids:
+        for room_connection_id in room_connection_ids:
             apigw.post_to_connection(
                 Data=f"{info['user_name']}さんが退出しました!".encode(),
-                ConnectionId=connection_id,
+                ConnectionId=room_connection_id,
             )
     except:
         logger.exception("post_to_connection_error")
