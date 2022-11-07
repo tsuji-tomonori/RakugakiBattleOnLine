@@ -37,6 +37,33 @@ class PythonLambdaWithoutLayer(Construct):
         )
 
 
+class DockerLambdaWithoutLayer(Construct):
+
+    def __init__(self, scope: Construct, id: str) -> None:
+        super().__init__(scope, id)
+
+        function_name = f"lmd-{id}-cdk"
+
+        self.fn = lambda_.DockerImageFunction(
+            self, function_name,
+            code=lambda_.DockerImageCode.from_image_asset(
+                directory=f"src/{id}",
+            ),
+            function_name=function_name,
+            environment=self.node.try_get_context(f"env_fn_{id}"),
+            description=self._param.description,
+            timeout=cdk.Duration.seconds(20),
+            memory_size=1024,
+        )
+
+        loggroup_name = f"/aws/lambda/{self.fn.function_name}"
+        logs.LogGroup(
+            self, f"{id}-loggroup",
+            log_group_name=loggroup_name,
+            retention=logs.RetentionDays.ONE_DAY,
+        )
+
+
 class CreateDbAndSetEnvToFn(Construct):
 
     def __init__(self, scope: Construct, id: str, fns: list[lambda_.Function] = []) -> None:
