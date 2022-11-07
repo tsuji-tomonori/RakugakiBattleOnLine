@@ -13,7 +13,7 @@ from aws_cdk.aws_apigatewayv2_alpha import(
 )
 from constructs import Construct
 
-from cdk.construct import PythonLambdaWithoutLayer, CreateDbAndSetEnvToFn, CreateBucketAndSetEnvToFn
+from cdk.construct import PythonLambdaWithoutLayer, CreateDbAndSetEnvToFn, CreateBucketAndSetEnvToFn, DockerLambdaWithoutLayer
 
 
 class RakugakiBattleOnLine(Stack):
@@ -24,7 +24,7 @@ class RakugakiBattleOnLine(Stack):
         on_connect = PythonLambdaWithoutLayer(self, "on_connect")
         enter_room = PythonLambdaWithoutLayer(self, "enter_room")
         dis_connect = PythonLambdaWithoutLayer(self, "dis_connect")
-        predict = PythonLambdaWithoutLayer(self, "predict")
+        predict = DockerLambdaWithoutLayer(self, "predict")
 
         for construst in [on_connect, enter_room, dis_connect, predict]:
             Tags.of(construst).add("Construct", construst.node.id)

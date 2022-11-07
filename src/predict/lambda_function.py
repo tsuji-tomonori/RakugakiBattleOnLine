@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import csv
 import uuid
 import base64
 import json
@@ -8,6 +9,11 @@ import logging
 from typing import Any, NamedTuple
 
 import boto3
+import cv2
+import matplotlib.pyplot as plt
+import numpy as np
+from PIL import Image
+from tensorflow.keras.models import load_model
 
 
 class EnvironParam(NamedTuple):
@@ -97,10 +103,56 @@ def post_result(connection_id: str, key: str) -> None:
         raise DoNotRetryException from e
 
 
+def preprocessing(img_b64: str) -> numpy.array:
+    # いったん保存する(それ以外の方法で画像を読み込むやり方が分からなかった)
+    path = f"/tmp/{uuid.uuid4()}.png"
+    with open(path, "wb") as f:
+        f.write(img_b64.split(",")[1])
+    # 読み込み
+    img = Image.open(path)
+    # 画像の切り抜き
+    img = img.crop(img.getbbox())
+    # グレースケール化
+    img = np.array(img)[:,:,3]
+    # 画像のリサイズ
+    x, y = img.shape
+    if x < y:
+        img = cv2.resize(img, (26, min(x*26//y+1, 26)))
+    else:
+        img = cv2.resize(img,(min(y*26//x+1, 26), 26))
+    # 28*28の背景にリサイズした画像を張り付け
+    img_back = np.zeros((28, 28), np.uint8)
+    x, y = img.shape
+    for i in range(x):
+        for j in range(y):
+            img_back[i+(28-x)//2][j+(28-y)//2] += img[i][j]
+    img = img_back
+    # 正規化
+    img = img / 255.
+    return img
+
+
+def get_index_label_map() -> dict[int, str]:
+    with open("label.csv", "r", encoding="utf-8") as f:
+        reader = csv.reader(f)
+        return {int(l[1]): l[0] for i, l in enumerate(reader) if i != 0}
+
+
+def predict(img_b64: str):
+    img = preprocessing(img_b64)
+    reconstructed_model = load_model("model.h5")
+    result = reconstructed_model.predict(img.reshape(1, 28, 28))
+    index_score = dict(zip(range(len(result[0])), result[0]))
+    index_label_map = get_index_label_map()
+    scores = [f"{index_label_map[x[0]]}: {x[1]*100:.3} Point" for x in sorted(index_score.items(), key=lambda x: x[1], reverse=True)]
+    return ", ".join(scores[:5])
+
+
 def service(connection_id: str, body: BodySchema) -> None:
     key = upload_img(connection_id, body.img_b64)
     put_item(connection_id, body, key)
-    post_result(connection_id, key)
+    score = predict(body.img_b64)
+    post_result(connection_id, score)
 
 
 def lambda_handler(event, context):
