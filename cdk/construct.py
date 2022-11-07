@@ -51,7 +51,6 @@ class DockerLambdaWithoutLayer(Construct):
             ),
             function_name=function_name,
             environment=self.node.try_get_context(f"env_fn_{id}"),
-            description=self._param.description,
             timeout=cdk.Duration.seconds(20),
             memory_size=1024,
         )
