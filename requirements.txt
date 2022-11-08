@@ -2,3 +2,7 @@ aws-cdk-lib==2.50.0
 constructs>=10.0.0,<11.0.0
 aws-cdk.aws-apigatewayv2-integrations-alpha==2.50.0a0
 boto3==1.26.3
+tensorflow==2.9.2
+numpy==1.21.6
+Pillow==9.3.0
+opencv-python-headless==4.6.0.66
