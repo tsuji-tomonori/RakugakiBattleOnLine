@@ -64,7 +64,8 @@ class RakugakiBattleOnLine(Stack):
             integration=WebSocketIntegration(
                 self, "predict_integration", 
                 integration_type=WebSocketIntegrationType.AWS_PROXY, 
-                integration_uri=predict.queue.queue_url
+                integration_uri=predict.queue.queue_url,
+                web_socket_api=api,
             ),
         )
         api.grant_manage_connections(enter_room.fn.role)
