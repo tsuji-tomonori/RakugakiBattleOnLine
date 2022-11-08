@@ -155,7 +155,7 @@ def service(connection_id: str, body: BodySchema) -> None:
 
 
 def lambda_handler(event, context):
-    logger.debug(json.dumps(event, indent=2))
+    logger.info(json.dumps(event, indent=2))
     try:
         service(event["requestContext"]["connectionId"], BodySchema.from_event(event))
         return {
