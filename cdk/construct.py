@@ -87,6 +87,7 @@ class CreateDbAndSetEnvToFn(Construct):
             billing_mode=dynamodb.BillingMode.PROVISIONED,
             read_capacity=1,
             write_capacity=1,
+            removal_policy=cdk.RemovalPolicy.DESTROY,
         )
 
         for fn in fns:
