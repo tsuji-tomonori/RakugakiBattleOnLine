@@ -6,6 +6,8 @@ from aws_cdk import (
     aws_logs as logs,
     aws_dynamodb as dynamodb,
     aws_s3 as s3,
+    aws_sqs as sqs,
+    aws_lambda_event_sources as event_source,
     Duration,
 )
 from constructs import Construct
@@ -61,6 +63,19 @@ class DockerLambdaWithoutLayer(Construct):
             log_group_name=loggroup_name,
             retention=logs.RetentionDays.ONE_DAY,
         )
+
+
+class SqsDockerLambda(Construct):
+
+    def __init__(self, scope: Construct, id: str) -> None:
+        super().__init__(scope, id)
+
+        queue_name = f"sqs-{id}-cdk"
+
+        docker_construct = DockerLambdaWithoutLayer(self, id)
+        self.queue = sqs.Queue(self, queue_name, queue_name=queue_name)
+        docker_construct.fn.add_event_source(event_source.SqsEventSource(self.queue))
+        self.fn = docker_construct.fn
 
 
 class CreateDbAndSetEnvToFn(Construct):

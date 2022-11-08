@@ -10,10 +10,12 @@ from aws_cdk.aws_apigatewayv2_alpha import(
     WebSocketApi,
     WebSocketStage,
     WebSocketRouteOptions,
+    WebSocketIntegration,
+    WebSocketIntegrationType,
 )
 from constructs import Construct
 
-from cdk.construct import PythonLambdaWithoutLayer, CreateDbAndSetEnvToFn, CreateBucketAndSetEnvToFn, DockerLambdaWithoutLayer
+from cdk.construct import PythonLambdaWithoutLayer, CreateDbAndSetEnvToFn, CreateBucketAndSetEnvToFn, SqsDockerLambda
 
 
 class RakugakiBattleOnLine(Stack):
@@ -24,7 +26,7 @@ class RakugakiBattleOnLine(Stack):
         on_connect = PythonLambdaWithoutLayer(self, "on_connect")
         enter_room = PythonLambdaWithoutLayer(self, "enter_room")
         dis_connect = PythonLambdaWithoutLayer(self, "dis_connect")
-        predict = DockerLambdaWithoutLayer(self, "predict")
+        predict = SqsDockerLambda(self, "predict")
 
         for construst in [on_connect, enter_room, dis_connect, predict]:
             Tags.of(construst).add("Construct", construst.node.id)
@@ -59,7 +61,11 @@ class RakugakiBattleOnLine(Stack):
         )
         api.add_route(
             route_key="predict",
-            integration=WebSocketLambdaIntegration("predict_integration", predict.fn),
+            integration=WebSocketIntegration(
+                self, "predict_integration", 
+                integration_type=WebSocketIntegrationType.AWS_PROXY, 
+                integration_uri=predict.queue.queue_url
+            ),
         )
         api.grant_manage_connections(enter_room.fn.role)
         api.grant_manage_connections(dis_connect.fn.role)
