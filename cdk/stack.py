@@ -10,6 +10,7 @@ from aws_cdk.aws_apigatewayv2_alpha import(
     WebSocketApi,
     WebSocketStage,
     WebSocketRouteOptions,
+    WebSocketRouteIntegration,
     WebSocketIntegration,
     WebSocketIntegrationType,
 )
@@ -61,12 +62,12 @@ class RakugakiBattleOnLine(Stack):
         )
         api.add_route(
             route_key="predict",
-            integration=WebSocketIntegration(
+            integration=WebSocketRouteIntegration(WebSocketIntegration(
                 self, "predict_integration", 
                 integration_type=WebSocketIntegrationType.AWS_PROXY, 
                 integration_uri=predict.queue.queue_url,
                 web_socket_api=api,
-            ),
+            )),
         )
         api.grant_manage_connections(enter_room.fn.role)
         api.grant_manage_connections(dis_connect.fn.role)
