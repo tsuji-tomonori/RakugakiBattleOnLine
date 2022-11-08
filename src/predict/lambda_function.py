@@ -107,7 +107,7 @@ def preprocessing(img_b64: str) -> numpy.array:
     # いったん保存する(それ以外の方法で画像を読み込むやり方が分からなかった)
     path = f"/tmp/{uuid.uuid4()}.png"
     with open(path, "wb") as f:
-        f.write(img_b64.split(",")[1])
+        f.write(base64.b64decode(img_b64.split(",")[1]))
     # 読み込み
     img = Image.open(path)
     # 画像の切り抜き
