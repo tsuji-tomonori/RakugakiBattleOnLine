@@ -51,8 +51,8 @@ class DockerLambdaWithoutLayer(Construct):
             ),
             function_name=function_name,
             environment=self.node.try_get_context(f"env_fn_{id}"),
-            timeout=cdk.Duration.seconds(20),
-            memory_size=1024,
+            timeout=cdk.Duration.seconds(60),
+            memory_size=2048,
         )
 
         loggroup_name = f"/aws/lambda/{self.fn.function_name}"
