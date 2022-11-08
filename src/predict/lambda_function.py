@@ -36,6 +36,7 @@ dynamodb = boto3.resource("dynamodb")
 apigw = boto3.client("apigatewaymanagementapi", endpoint_url=ep.ENDPOINT_URL)
 user_table = dynamodb.Table(ep.USER_TABLE_NAME)
 s3 = boto3.client("s3")
+reconstructed_model = load_model("model.h5")
 
 
 class BodySchema(NamedTuple):
@@ -139,7 +140,6 @@ def get_index_label_map() -> dict[int, str]:
 
 def predict(img_b64: str):
     img = preprocessing(img_b64)
-    reconstructed_model = load_model("model.h5")
     result = reconstructed_model.predict(img.reshape(1, 28, 28))
     index_score = dict(zip(range(len(result[0])), result[0]))
     index_label_map = get_index_label_map()
