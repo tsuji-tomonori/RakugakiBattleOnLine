@@ -94,14 +94,14 @@ def put_item(connection_id: str, body: BodySchema, label_score_map: dict[str, fl
 
 
 def post_result(connection_id: str, scores: list[dict[str, float]], command: str) -> None:
+    data = {"command": command, "scores": scores[:5]}
+    logger.info(data)
+    data_bin = json.dumps(data).encode()
     try:
         apigw.post_to_connection(
-            Data=json.dumps({"command": command, "scores": scores[:5]}).encode(),
+            Data=data_bin,
             ConnectionId=connection_id,
         )
-    except boto3.client.exceptions.GoneException:
-        # 何らかの事情でDBに残っていても接続が切れている場合があるのでSkip
-        logger.exception("warn")
     except Exception as e:
         logger.exception("delete_item_error")
         raise DoNotRetryException from e
