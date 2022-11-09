@@ -135,7 +135,11 @@ def preprocessing(img_b64: str) -> numpy.array:
 def get_index_label_map() -> dict[int, str]:
     with open("label.csv", "r", encoding="utf-8") as f:
         reader = csv.reader(f)
-        return {int(l[1]): l[0] for i, l in enumerate(reader) if i != 0}
+        index_label_map = {int(l[1]): l[0] for i, l in enumerate(reader) if i != 0}
+    with open("en2jp.csv", "r", encoding="utf-8") as f:
+        reader = csv.reader(f)
+        en2jp = {int(l[1]): l[0] for l in reader}
+    return {k: en2jp.get(v, v) for k, v in index_label_map.items()}
 
 
 def predict(img_b64: str):
