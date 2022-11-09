@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from aws_cdk import (
+    aws_iam as iam,
     Stack,
     Tags,
     CfnOutput,
 )
+from aws_cdk.aws_apigatewayv2 import CfnIntegration
 from aws_cdk.aws_apigatewayv2_integrations_alpha import WebSocketLambdaIntegration
 from aws_cdk.aws_apigatewayv2_alpha import(
     WebSocketApi,
@@ -60,14 +62,41 @@ class RakugakiBattleOnLine(Stack):
             route_key="enter_room",
             integration=WebSocketLambdaIntegration("enter_room_integration", enter_room.fn)
         )
+        predict_integration = CfnIntegration(
+            self, 
+            f"sqs-{id}-integration",
+            api_id=api.api_id,
+            integration_type="AWS",
+            connection_type="INTERNET",
+            credentials_arn=iam.Role(
+                self, "predict_integration_role",
+                assumed_by=iam.ServicePrincipal("apigateway.amazonaws.com"),
+                inline_policies={
+                    "APIGatewaySQSSendMessagePolicy": iam.PolicyDocument(
+                        statements=[
+                            iam.PolicyStatement(
+                                actions=["sqs:SendMessage"],
+                                effect=iam.Effect.ALLOW,
+                                resources=[predict.queue.queue_arn],
+                            )
+                        ]
+                    )
+                }
+            ),
+            integration_method="POST",
+            integration_uri=predict.queue.queue_arn,
+            passthrough_behavior="NEVER",
+            request_parameters={
+                "integration.request.header.Content-Type": "'application/x-www-form-urlencoded'"
+            },
+            request_templates={
+                "$default": "Action=SendMessage&MessageGroupId=$input.path('$.MessageGroupId')&MessageDeduplicationId=$context.requestId&MessageAttribute.1.Name=connectionId&MessageAttribute.1.Value.StringValue=$context.connectionId&MessageAttribute.1.Value.DataType=String&MessageAttribute.2.Name=requestId&MessageAttribute.2.Value.StringValue=$context.requestId&MessageAttribute.2.Value.DataType=String&MessageBody=$input.json('$')"
+            },
+            template_selection_expression="\$default",
+        )
         api.add_route(
             route_key="predict",
-            integration=WebSocketRouteIntegration(WebSocketIntegration(
-                self, "predict_integration", 
-                integration_type=WebSocketIntegrationType.AWS_PROXY, 
-                integration_uri=predict.queue.queue_url,
-                web_socket_api=api,
-            )),
+            integration=predict_integration,
         )
         api.grant_manage_connections(enter_room.fn.role)
         api.grant_manage_connections(dis_connect.fn.role)
