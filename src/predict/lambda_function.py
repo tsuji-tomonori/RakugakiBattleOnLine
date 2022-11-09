@@ -89,10 +89,10 @@ def put_item(connection_id: str, body: BodySchema, key: str) -> None:
         raise DoNotRetryException from e
 
 
-def post_result(connection_id: str, key: str) -> None:
+def post_result(connection_id: str, scores: list[str, float]) -> None:
     try:
         apigw.post_to_connection(
-            Data=f"画像を投稿しました: {key}".encode(),
+            Data=json.dumps({"command": "predict", "scores": scores}).encode(),
             ConnectionId=connection_id,
         )
     except boto3.client.exceptions.GoneException:
@@ -147,8 +147,8 @@ def predict(img_b64: str):
     result = reconstructed_model.predict(img.reshape(1, 28, 28))
     index_score = dict(zip(range(len(result[0])), result[0]))
     index_label_map = get_index_label_map()
-    scores = [f"{index_label_map[x[0]]}: {x[1]*100:.3} Point" for x in sorted(index_score.items(), key=lambda x: x[1], reverse=True)]
-    return ", ".join(scores[:5])
+    scores = [f"{index_label_map[x[0]]}: {x[1]*10000:.3} Point" for x in sorted(index_score.items(), key=lambda x: x[1], reverse=True)]
+    return scores[:5]
 
 
 def service(connection_id: str, body: BodySchema) -> None:
