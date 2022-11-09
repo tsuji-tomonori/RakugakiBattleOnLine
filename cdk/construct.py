@@ -74,6 +74,7 @@ class LambdaToSqsToLambda(Construct):
         self.queue = sqs.Queue(
             self, queue_name,
             queue_name=queue_name,
+            visibility_timeout=Duration.seconds(10),
         )
 
         lambda_construct = PythonLambdaWithoutLayer(self, id)
