@@ -41,6 +41,9 @@ reconstructed_model = load_model("model.h5")
 
 class BodySchema(NamedTuple):
     img_b64: str
+    odai: str
+    is_fin: bool
+    img_id: str
 
     @classmethod
     def from_event(cls, event: dict[str, Any]) -> BodySchema:
@@ -75,13 +78,14 @@ def upload_img(connection_id: str, img_b64: str) -> str:
         raise DoNotRetryException from e
 
 
-def put_item(connection_id: str, body: BodySchema, key: str) -> None:
+def put_item(connection_id: str, body: BodySchema, label_score_map: dict[str, float], key: str) -> None:
     try:
         user_table.put_item(
             Item={
                 ep.USER_TABLE_PKEY: connection_id,
-                ep.USER_TABLE_SKEY: "image",
+                ep.USER_TABLE_SKEY: body.img_id,
                 "key": key,
+                "score": label_score_map[body.odai],
             }
         )
     except Exception as e:
@@ -89,10 +93,10 @@ def put_item(connection_id: str, body: BodySchema, key: str) -> None:
         raise DoNotRetryException from e
 
 
-def post_result(connection_id: str, key: str) -> None:
+def post_result(connection_id: str, scores: list[dict[str, float]], command: str) -> None:
     try:
         apigw.post_to_connection(
-            Data=f"画像を投稿しました: {key}".encode(),
+            Data=json.dumps({"command": command, "scores": scores[:5]}).encode(),
             ConnectionId=connection_id,
         )
     except boto3.client.exceptions.GoneException:
@@ -138,24 +142,28 @@ def get_index_label_map() -> dict[int, str]:
         index_label_map = {int(l[1]): l[0] for i, l in enumerate(reader) if i != 0}
     with open("en2jp.csv", "r", encoding="utf-8") as f:
         reader = csv.reader(f)
-        en2jp = {l[1]: l[0] for l in reader}
+        en2jp = {l[0]: l[1] for l in reader}
     return {k: en2jp.get(v, v) for k, v in index_label_map.items()}
 
 
-def predict(img_b64: str):
+def predict(img_b64: str) -> tuple(dict[str, float], list[dict[str, float]]):
     img = preprocessing(img_b64)
     result = reconstructed_model.predict(img.reshape(1, 28, 28))
-    index_score = dict(zip(range(len(result[0])), result[0]))
+    index_score_map = dict(zip(range(len(result[0])), result[0]*10000))
     index_label_map = get_index_label_map()
-    scores = [f"{index_label_map[x[0]]}: {x[1]*100:.3} Point" for x in sorted(index_score.items(), key=lambda x: x[1], reverse=True)]
-    return ", ".join(scores[:5])
+    label_score_map = {index_label_map[k]: v for k, v in index_score_map.items()}
+    scores = [{"key": {index_label_map[x[0]]}, "value": {x[1]:.3}} for x in sorted(index_score_map.items(), key=lambda x: x[1], reverse=True)]
+    return (label_score_map, scores)
 
 
 def service(connection_id: str, body: BodySchema) -> None:
-    key = upload_img(connection_id, body.img_b64)
-    put_item(connection_id, body, key)
-    score = predict(body.img_b64)
-    post_result(connection_id, score)
+    label_score_map, scores = predict(body.img_b64)
+    if body.is_fin:
+        key = upload_img(connection_id, body.img_b64)
+        put_item(connection_id, body, label_score_map, key)
+        post_result(connection_id, scores, "img_save")
+    else:
+        post_result(connection_id, scores, "predict")
 
 
 def lambda_handler(event, context):
@@ -172,3 +180,4 @@ def lambda_handler(event, context):
     return {
                 "statusCode": 200,
             }
+
