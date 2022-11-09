@@ -13,7 +13,7 @@ from aws_cdk.aws_apigatewayv2_alpha import(
 )
 from constructs import Construct
 
-from cdk.construct import PythonLambdaWithoutLayer, CreateDbAndSetEnvToFn, CreateBucketAndSetEnvToFn, DockerLambdaWithoutLayer
+from cdk.construct import *
 
 
 class RakugakiBattleOnLine(Stack):
@@ -25,8 +25,9 @@ class RakugakiBattleOnLine(Stack):
         enter_room = PythonLambdaWithoutLayer(self, "enter_room")
         dis_connect = PythonLambdaWithoutLayer(self, "dis_connect")
         predict = DockerLambdaWithoutLayer(self, "predict")
+        predict_queue = LambdaToSqsToLambda(self, "predict_queue", predict.fn)
 
-        for construst in [on_connect, enter_room, dis_connect, predict]:
+        for construst in [on_connect, enter_room, dis_connect, predict, predict_queue]:
             Tags.of(construst).add("Construct", construst.node.id)
 
         user = CreateDbAndSetEnvToFn(self, "user", [on_connect.fn, enter_room.fn, dis_connect.fn, predict.fn])
@@ -59,7 +60,7 @@ class RakugakiBattleOnLine(Stack):
         )
         api.add_route(
             route_key="predict",
-            integration=WebSocketLambdaIntegration("predict_integration", predict.fn),
+            integration=WebSocketLambdaIntegration("predict_integration", predict_queue.fn),
         )
         api.grant_manage_connections(enter_room.fn.role)
         api.grant_manage_connections(dis_connect.fn.role)

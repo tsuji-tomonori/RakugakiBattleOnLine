@@ -156,13 +156,15 @@ def service(connection_id: str, body: BodySchema) -> None:
 
 def lambda_handler(event, context):
     logger.info(json.dumps(event, indent=2))
-    try:
-        service(event["requestContext"]["connectionId"], BodySchema.from_event(event))
-        return {
-            "statusCode": 200,
-        }
-    except:
-        logger.exception("ERROR")
-        return {
-            "statusCode": 500,
-        }
+    for record in event["Records"]:
+        body = json.loads(record["body"])
+        try:
+            service(body["requestContext"]["connectionId"], BodySchema.from_event(body))
+        except:
+            logger.exception("ERROR")
+            return {
+                "statusCode": 500,
+            }
+    return {
+                "statusCode": 200,
+            }
