@@ -149,10 +149,10 @@ def get_index_label_map() -> dict[int, str]:
 def predict(img_b64: str) -> tuple(dict[str, float], list[dict[str, float]]):
     img = preprocessing(img_b64)
     result = reconstructed_model.predict(img.reshape(1, 28, 28))
-    index_score_map = dict(zip(range(len(result[0])), float(result[0]*10000)))
+    index_score_map = dict(zip(range(len(result[0])), result[0]*10000))
     index_label_map = get_index_label_map()
-    label_score_map = {index_label_map[k]: v for k, v in index_score_map.items()}
-    scores = [{"key": index_label_map[x[0]], "value": x[1]} for x in sorted(index_score_map.items(), key=lambda x: x[1], reverse=True)]
+    label_score_map = {index_label_map[k]: float(v) for k, v in index_score_map.items()}
+    scores = [{"key": x[0], "value": x[1]} for x in sorted(label_score_map.items(), key=lambda x: x[1], reverse=True)]
     return (label_score_map, scores)
 
 
