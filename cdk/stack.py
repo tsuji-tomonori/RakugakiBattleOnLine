@@ -62,27 +62,28 @@ class RakugakiBattleOnLine(Stack):
             route_key="enter_room",
             integration=WebSocketLambdaIntegration("enter_room_integration", enter_room.fn)
         )
+        predict_integration_role = iam.Role(
+            self, "predict_integration_role",
+            assumed_by=iam.ServicePrincipal("apigateway.amazonaws.com"),
+            inline_policies={
+                "APIGatewaySQSSendMessagePolicy": iam.PolicyDocument(
+                    statements=[
+                        iam.PolicyStatement(
+                            actions=["sqs:SendMessage"],
+                            effect=iam.Effect.ALLOW,
+                            resources=[predict.queue.queue_arn],
+                        )
+                    ]
+                )
+            }
+        )
         predict_integration = CfnIntegration(
             self, 
             f"sqs-{id}-integration",
             api_id=api.api_id,
             integration_type="AWS",
             connection_type="INTERNET",
-            credentials_arn=iam.Role(
-                self, "predict_integration_role",
-                assumed_by=iam.ServicePrincipal("apigateway.amazonaws.com"),
-                inline_policies={
-                    "APIGatewaySQSSendMessagePolicy": iam.PolicyDocument(
-                        statements=[
-                            iam.PolicyStatement(
-                                actions=["sqs:SendMessage"],
-                                effect=iam.Effect.ALLOW,
-                                resources=[predict.queue.queue_arn],
-                            )
-                        ]
-                    )
-                }
-            ),
+            credentials_arn=predict_integration_role.role_arn,
             integration_method="POST",
             integration_uri=predict.queue.queue_arn,
             passthrough_behavior="NEVER",
