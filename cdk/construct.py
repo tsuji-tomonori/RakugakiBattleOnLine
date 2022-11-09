@@ -26,7 +26,7 @@ class PythonLambdaWithoutLayer(Construct):
             code=lambda_.Code.from_asset(f"src/{id}"),
             handler="lambda_function.lambda_handler",
             runtime=lambda_.Runtime.PYTHON_3_9,
-            timeout=Duration.seconds(10),
+            timeout=Duration.seconds(60),
             environment=self.node.try_get_context(f"env_fn_{id}"),
             memory_size=256,
         )
@@ -74,7 +74,7 @@ class LambdaToSqsToLambda(Construct):
         self.queue = sqs.Queue(
             self, queue_name,
             queue_name=queue_name,
-            visibility_timeout=Duration.seconds(10),
+            visibility_timeout=Duration.seconds(60),
         )
 
         lambda_construct = PythonLambdaWithoutLayer(self, id)
