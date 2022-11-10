@@ -37,7 +37,7 @@ class RakugakiBattleOnLine(Stack):
         user.db.grant_full_access(dis_connect.fn.role)
         user.db.grant_write_data(predict.fn.role)
 
-        room = CreateDbAndSetEnvToFn(self, "room", [enter_room.fn, dis_connect.fn])
+        room = CreateDbAndSetEnvToFn(self, "room", [enter_room.fn, dis_connect.fn, start_game.fn])
         room.db.grant_read_write_data(enter_room.fn.role)
         room.db.grant_full_access(dis_connect.fn.role)
         room.db.grant_read_data(start_game.fn.role)
