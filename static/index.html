@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>RakugaliBattleOnLine</title>
+</head>
+
+<body>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.2.4/fabric.min.js"
+        integrity="sha512-HkRNCiaZYxQAkHpLFYI90ObSzL0vaIXL8Xe3bM51vhdYI79RDFMLTAsmVH1xVPREmTlUWexgrQMk+c3RBTsLGw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="index.js"></script>
+
+    <!-- Login周りのUI -->
+    <div class="bg-white py-6 sm:py-8 lg:py-12" id="login_area">
+        <div class="max-w-screen-2xl px-4 md:px-8 mx-auto">
+            <h2 class="text-gray-800 text-2xl lg:text-3xl font-bold text-center mb-4 md:mb-8">Login</h2>
+
+            <div class="max-w-lg border rounded-lg mx-auto">
+                <div class="flex flex-col gap-4 p-4 md:p-8">
+                    <div>
+                        <label for="LoomID" class="inline-block text-gray-800 text-sm sm:text-base mb-2">LoomID</label>
+                        <input name="LoomID" id="room_id"
+                            class="w-full bg-gray-50 text-gray-800 border focus:ring ring-indigo-300 rounded outline-none transition duration-100 px-3 py-2" />
+                    </div>
+
+                    <div>
+                        <label for="UserName"
+                            class="inline-block text-gray-800 text-sm sm:text-base mb-2">UserName</label>
+                        <input name="UserName" id="user_name"
+                            class="w-full bg-gray-50 text-gray-800 border focus:ring ring-indigo-300 rounded outline-none transition duration-100 px-3 py-2" />
+                    </div>
+
+                    <button id="login"
+                        class="block bg-gray-800 hover:bg-gray-700 active:bg-gray-600 focus-visible:ring ring-gray-300 text-white text-sm md:text-base font-semibold text-center rounded-lg outline-none transition duration-100 px-8 py-3">Log
+                        in</button>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 部屋に入った時のUI -->
+    <div class="bg-white py-6 sm:py-8 lg:py-12" id="room_area">
+        <div class="max-w-screen-xl px-4 md:px-8 mx-auto">
+            <div class="mb-10 md:mb-16">
+                <h2 class="text-gray-800 text-2xl lg:text-3xl font-bold text-center mb-4 md:mb-6">現在参加しているメンバー</h2>
+            </div>
+            <div class="grid grid-cols-2 lg:grid-cols-3 gap-x-4 lg:gap-x-8 gap-y-6 sm:gap-y-8 lg:gap-y-12"
+                id="room_area_base">
+            </div>
+            <button id="game_start"
+                class=" sm:justify-center block bg-gray-800 hover:bg-gray-700 active:bg-gray-600 focus-visible:ring ring-gray-300 text-white text-sm md:text-base font-semibold text-center rounded-lg outline-none transition duration-100 px-8 py-3">GameStart</button>
+        </div>
+    </div>
+
+    <!-- お絵かき周りのUI -->
+    <div class="frex grid grid-cols-6 gap-4" id="canvas_area">
+        <div class="col-start-2 col-span-4">
+            <canvas id="test_canvas" width="500" height="500" class="border-2 border-indigo-600 m-12"></canvas>
+        </div>
+        <button id="delete_btn"
+            class="col-start-2 col-end-3 m-12 block bg-gray-800 hover:bg-gray-700 active:bg-gray-600 focus-visible:ring ring-gray-300 text-white text-sm md:text-base font-semibold text-center rounded-lg outline-none transition duration-100 px-8 py-3">delete</button>
+        <div class="col-start-2 col-end-3 m-12">
+            <ul id="list"></ul>
+        </div>
+    </div>
+
+    <!-- 結果のUI -->
+    <div class="bg-white py-6 sm:py-8 lg:py-12" id="result_area">
+        <div class="max-w-screen-xl px-4 md:px-8 mx-auto">
+            <div class="mb-10 md:mb-16">
+                <h2 class="text-gray-800 text-2xl lg:text-3xl font-bold text-center mb-4 md:mb-6" id=""></h2>
+            </div>
+            <div class="grid grid-cols-2 lg:grid-cols-3 gap-x-4 lg:gap-x-8 gap-y-6 sm:gap-y-8 lg:gap-y-12"
+                id="result_area_base">
+            </div>
+            <button id="next_result"
+                class=" sm:justify-center block bg-gray-800 hover:bg-gray-700 active:bg-gray-600 focus-visible:ring ring-gray-300 text-white text-sm md:text-base font-semibold text-center rounded-lg outline-none transition duration-100 px-8 py-3">GameStart</button>
+        </div>
+    </div>
+</body>
+
+</html>
