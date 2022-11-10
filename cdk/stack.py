@@ -26,8 +26,9 @@ class RakugakiBattleOnLine(Stack):
         dis_connect = PythonLambdaWithoutLayer(self, "dis_connect")
         predict = DockerLambdaWithoutLayer(self, "predict")
         predict_queue = LambdaToSqsToLambda(self, "predict_queue", predict.fn)
+        start_game = PythonLambdaWithoutLayer(self, "start_game")
 
-        for construst in [on_connect, enter_room, dis_connect, predict, predict_queue]:
+        for construst in [on_connect, enter_room, dis_connect, predict, predict_queue, start_game]:
             Tags.of(construst).add("Construct", construst.node.id)
 
         user = CreateDbAndSetEnvToFn(self, "user", [on_connect.fn, enter_room.fn, dis_connect.fn, predict.fn])
@@ -39,6 +40,7 @@ class RakugakiBattleOnLine(Stack):
         room = CreateDbAndSetEnvToFn(self, "room", [enter_room.fn, dis_connect.fn])
         room.db.grant_read_write_data(enter_room.fn.role)
         room.db.grant_full_access(dis_connect.fn.role)
+        room.db.grant_read_data(start_game.fn.role)
 
         result = CreateBucketAndSetEnvToFn(self, "result", [predict.fn])
         result.bucket.grant_put(predict.fn.role)
@@ -62,9 +64,14 @@ class RakugakiBattleOnLine(Stack):
             route_key="predict",
             integration=WebSocketLambdaIntegration("predict_integration", predict_queue.fn),
         )
+        api.add_route(
+            route_key="start_game",
+            integration=WebSocketLambdaIntegration("start_game_integration", start_game.fn),
+        )
         api.grant_manage_connections(enter_room.fn.role)
         api.grant_manage_connections(dis_connect.fn.role)
         api.grant_manage_connections(predict.fn.role)
+        api.grant_manage_connections(start_game.fn.role)
 
         prod = WebSocketStage(
             self, "ProdApi",
@@ -76,6 +83,7 @@ class RakugakiBattleOnLine(Stack):
         enter_room.fn.add_environment("ENDPOINT_URL", endpoint)
         dis_connect.fn.add_environment("ENDPOINT_URL", endpoint)
         predict.fn.add_environment("ENDPOINT_URL", endpoint)
+        start_game.fn.add_environment("ENDPOINT_URL", endpoint)
 
         CfnOutput(
             self, "WebSocketURI",
