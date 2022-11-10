@@ -34,6 +34,9 @@
         "env_fn_predict_queue": {
             "LOG_LEVEL": "INFO"
         },
+        "env_fn_start_game": {
+            "LOG_LEVEL": "INFO"
+        },
         "env_db_user": {
             "pkey": "user_id",
             "skey": "skey"
