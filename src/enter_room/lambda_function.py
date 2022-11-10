@@ -68,6 +68,17 @@ def put_item(connection_id: str, body: BodySchema) -> None:
         raise DoNotRetryException from e
 
 
+def post_one_user(user_name: str, connection_id: str):
+    try:
+        apigw.post_to_connection(
+            Data=json.dumps({"command": "enter_room", "name": user_name}).encode(),
+            ConnectionId=connection_id,
+        )
+    except Exception as e:
+        logger.exception("post_to_connection")
+        raise DoNotRetryException from e
+
+
 def post_all_user(owner_connection_id: str, connection_ids: list[str]) -> None:
     for connection_id in connection_ids:
         try:
@@ -81,28 +92,7 @@ def post_all_user(owner_connection_id: str, connection_ids: list[str]) -> None:
         except Exception as e:
             logger.exception("get_item")
             raise DoNotRetryException from e
-        try:
-            apigw.post_to_connection(
-                Data=json.dumps({"command": "enter_room", "name": user_name}).encode(),
-                ConnectionId=owner_connection_id,
-            )
-        except Exception as e:
-            logger.exception("post_to_connection")
-            raise DoNotRetryException from e
-
-
-def post_owner(body, connection_id):
-    try:
-        apigw.post_to_connection(
-            Data=json.dumps({"command": "enter_room", "name": body.user_name}).encode(),
-            ConnectionId=connection_id,
-        )
-    except boto3.client.exceptions.GoneException:
-        # 何らかの事情でDBに残っていても接続が切れている場合があるのでSkip
-        logger.exception("warn")
-    except Exception as e:
-        logger.exception("delete_item_error")
-        raise DoNotRetryException from e
+        post_one_user(user_name, owner_connection_id)
 
 
 def post_room(owner_connection_id: str, body: BodySchema) -> None:
@@ -118,7 +108,7 @@ def post_room(owner_connection_id: str, body: BodySchema) -> None:
         if connection_id == owner_connection_id:
             post_all_user(owner_connection_id, connection_ids)
         else:
-            post_owner(body, connection_id)
+            post_one_user(body.user_name, connection_id)
 
 
 def service(connection_id: str, body: BodySchema) -> None:
