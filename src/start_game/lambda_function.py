@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import os
+import csv
+import random
 import json
 import logging
 from typing import Any, NamedTuple
@@ -44,7 +46,18 @@ class DoNotRetryException(Exception):
     ...
 
 
+def get_odai() -> dict[int, str]:
+    with open("label.csv", "r", encoding="utf-8") as f:
+        reader = csv.reader(f)
+        index_label_map = {int(l[1]): l[0] for i, l in enumerate(reader) if i != 0}
+    with open("en2jp.csv", "r", encoding="utf-8") as f:
+        reader = csv.reader(f)
+        en2jp = {l[0]: l[1] for l in reader}
+    return [en2jp.get(v, v) for v in index_label_map.values()]
+
+
 def post_room(body: BodySchema) -> None:
+    odai = random.sample(get_odai(), body.n_odai)
     try:
         items = room_table.query(
             KeyConditionExpression=Key(ep.ROOM_TABLE_PKEY).eq(body.room_id)
@@ -56,7 +69,7 @@ def post_room(body: BodySchema) -> None:
     for connection_id in connection_ids:
         try:
             apigw.post_to_connection(
-                Data=json.dumps({"command": "game_start", "n_odai": body.n_odai, "n_time": body.n_time_sec}).encode(),
+                Data=json.dumps({"command": "game_start", "odai": odai, "n_time": body.n_time_sec}).encode(),
                 ConnectionId=connection_id,
             )
         except boto3.client.exceptions.GoneException:
