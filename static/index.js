@@ -10,11 +10,15 @@ window.onload = function () {
     canvas.freeDrawingBrush.color = '#000000';
     canvas.freeDrawingBrush.width = 5;
 
-    setTimeout(post_img, 1000 * 10);
+    let n_time = 30
+    let crnt_odai = ""
+    let odai_list = undefined
+    let img_id = 0
+
 
     sock.onmessage = function (event) {
         const data = JSON.parse(event.data)
-        console.log(data["command"])
+        console.log(data)
         switch (data["command"]) {
             case "enter_room":
                 add_user(data["name"])
@@ -22,6 +26,7 @@ window.onload = function () {
             case "game_start":
                 document.getElementById("room_area").style.display = "none"
                 document.getElementById("canvas_area").style.display = "block"
+                first_game_start(data)
                 break
             case "predict":
                 let element = document.getElementById('list')
@@ -77,6 +82,42 @@ window.onload = function () {
             "img_b64": canvas.toDataURL("image/jpeg")
         }
         sock.send(JSON.stringify(msg));
+    }
+
+    function post_img_fin() {
+        let msg = {
+            "action": "predict",
+            "odai": crnt_odai,
+            "is_fin": true,
+            "img_id": img_id,
+            "img_b64": canvas.toDataURL("image/jpeg")
+        }
+        sock.send(JSON.stringify(msg));
+        canvas.clear();
+        alert("このお題は終了です OKを押して次へ進んでください")
+        next_game_start()
+    }
+
+    function first_game_start(data) {
+        let odai_view = document.getElementById("odai")
+        odai_view.textContent = "お題: " + data["odai"][0]
+        crnt_odai = data["odai"][0]
+        odai_list = data["odai"]
+        n_time = data["n_time"] * 1000
+        setTimeout(post_img_fin, n_time)
+    }
+
+    function next_game_start() {
+        img_id += 1
+        if (img_id == odai_list.length) {
+            alert("ゲーム終了")
+        }
+        else {
+            crnt_odai = odai_list[img_id]
+            let odai_view = document.getElementById("odai")
+            odai_view.textContent = "お題: " + crnt_odai
+            setTimeout(post_img_fin, n_time)
+        }
     }
 }
 
