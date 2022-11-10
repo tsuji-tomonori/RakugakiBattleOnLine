@@ -105,7 +105,7 @@ def post_room(info: UDbInfoSchema) -> None:
     for connection_id in connection_ids:
         try:
             apigw.post_to_connection(
-                Data=f"{info.user_name}さんが退出しました!".encode(),
+                Data=json.dumps({"command": "dis_connect", "name": info.user_name}).encode(),
                 ConnectionId=connection_id,
             )
         except boto3.client.exceptions.GoneException:

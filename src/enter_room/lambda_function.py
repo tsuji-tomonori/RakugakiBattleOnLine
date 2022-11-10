@@ -80,7 +80,7 @@ def post_room(body: BodySchema) -> None:
     for connection_id in connection_ids:
         try:
             apigw.post_to_connection(
-                Data=f"{body.user_name}さんが入出しました!".encode(),
+                Data=json.dumps({"command": "enter_room", "name": body.user_name}).encode(),
                 ConnectionId=connection_id,
             )
         except boto3.client.exceptions.GoneException:
