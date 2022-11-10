@@ -83,7 +83,7 @@ def put_item(connection_id: str, body: BodySchema, label_score_map: dict[str, fl
         user_table.put_item(
             Item={
                 ep.USER_TABLE_PKEY: connection_id,
-                ep.USER_TABLE_SKEY: body.img_id,
+                ep.USER_TABLE_SKEY: str(body.img_id),
                 "key": key,
                 "score": str(label_score_map[body.odai]),
             }
