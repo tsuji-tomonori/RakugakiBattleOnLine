@@ -85,6 +85,8 @@ class RakugakiBattleOnLine(Stack):
         predict.fn.add_environment("ENDPOINT_URL", endpoint)
         start_game.fn.add_environment("ENDPOINT_URL", endpoint)
 
+        StaticWebSite(self, "rakugaki-battle-online")
+
         CfnOutput(
             self, "WebSocketURI",
             value=prod.url,
