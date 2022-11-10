@@ -14,11 +14,12 @@ window.onload = function () {
 
     sock.onmessage = function (event) {
         const data = JSON.parse(event.data)
+        console.log(data["command"])
         switch (data["command"]) {
             case "enter_room":
                 add_user(data["name"])
                 break
-            case "start_game":
+            case "game_start":
                 document.getElementById("room_area").style.display = "none"
                 document.getElementById("canvas_area").style.display = "block"
                 break
