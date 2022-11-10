@@ -8,6 +8,9 @@ from aws_cdk import (
     aws_dynamodb as dynamodb,
     aws_s3 as s3,
     aws_sqs as sqs,
+    aws_cloudfront as cloudfront,
+    aws_s3_deployment as deployment,
+    aws_cloudfront_origins as origins,
     Duration,
 )
 from constructs import Construct
@@ -146,3 +149,36 @@ class CreateBucketAndSetEnvToFn(Construct):
             fn.add_environment(
                 f"{id.upper()}_BUCKET_NAME", self.bucket.bucket_name)
             fn.add_environment(f"{id.upper()}_BUCKET_KEY", key)
+
+class StaticWebSite(Construct):
+
+    def __init__(self, scope: Construct, id: str) -> None:
+        super().__init__(scope, id)
+
+        bucket_name = f"s3s-pub-{id}-cdk"
+
+        website_bucket = s3.Bucket(
+            self, bucket_name,
+            bucket_name=bucket_name,
+        )
+
+        website_distribution = cloudfront.Distribution(
+            self, f"clf_{id}_WebDistribution_cdk",
+            default_root_object="index.html",
+            default_behavior=cloudfront.BehaviorOptions(
+                origin=origins.S3Origin(website_bucket)
+            )
+        )
+
+        deployment.BucketDeployment(
+            self, f"dep_{id}_cdk",
+            sources=[deployment.Source.asset("static")],
+            destination_bucket=website_bucket,
+            distribution=website_distribution,
+            distribution_paths=["/*"]
+        )
+
+        cdk.CfnOutput(
+            self, "static_web_site_url",
+            value=f"https://{website_distribution.domain_name}"
+        )
