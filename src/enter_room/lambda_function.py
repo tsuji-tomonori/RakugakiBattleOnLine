@@ -68,7 +68,44 @@ def put_item(connection_id: str, body: BodySchema) -> None:
         raise DoNotRetryException from e
 
 
-def post_room(body: BodySchema) -> None:
+def post_all_user(owner_connection_id: str, connection_ids: list[str]) -> None:
+    for connection_id in connection_ids:
+        try:
+            res = user_table.get_item(
+                Key={
+                    ep.USER_TABLE_PKEY: connection_id,
+                    ep.USER_TABLE_SKEY: "info",
+                }
+            )
+            user_name = res["Item"]["user_name"]
+        except Exception as e:
+            logger.exception("get_item")
+            raise DoNotRetryException from e
+        try:
+            apigw.post_to_connection(
+                Data=json.dumps({"command": "enter_room", "name": user_name}).encode(),
+                ConnectionId=owner_connection_id,
+            )
+        except Exception as e:
+            logger.exception("post_to_connection")
+            raise DoNotRetryException from e
+
+
+def post_owner(body, connection_id):
+    try:
+        apigw.post_to_connection(
+            Data=json.dumps({"command": "enter_room", "name": body.user_name}).encode(),
+            ConnectionId=connection_id,
+        )
+    except boto3.client.exceptions.GoneException:
+        # 何らかの事情でDBに残っていても接続が切れている場合があるのでSkip
+        logger.exception("warn")
+    except Exception as e:
+        logger.exception("delete_item_error")
+        raise DoNotRetryException from e
+
+
+def post_room(owner_connection_id: str, body: BodySchema) -> None:
     try:
         items = room_table.query(
             KeyConditionExpression=Key(ep.ROOM_TABLE_PKEY).eq(body.room_id)
@@ -78,22 +115,15 @@ def post_room(body: BodySchema) -> None:
         logger.exception("query")
         raise DoNotRetryException from e
     for connection_id in connection_ids:
-        try:
-            apigw.post_to_connection(
-                Data=json.dumps({"command": "enter_room", "name": body.user_name}).encode(),
-                ConnectionId=connection_id,
-            )
-        except boto3.client.exceptions.GoneException:
-            # 何らかの事情でDBに残っていても接続が切れている場合があるのでSkip
-            logger.exception("warn")
-        except Exception as e:
-            logger.exception("delete_item_error")
-            raise DoNotRetryException from e
+        if connection_id == owner_connection_id:
+            post_all_user(owner_connection_id, connection_ids)
+        else:
+            post_owner(body, connection_id)
 
 
 def service(connection_id: str, body: BodySchema) -> None:
     put_item(connection_id, body)
-    post_room(body)
+    post_room(connection_id, body)
 
 
 def lambda_handler(event, context):
